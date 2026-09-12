@@ -79,7 +79,7 @@ return True
 def validate_airline_record(record):
   required_fields = ["ID", "Type", "Airline Name"]
 
-  for field in requireD_fields:
+  for field in required_fields:
     if field not in record:
       return False
 
@@ -93,6 +93,68 @@ def validate_airline_record(record):
       return False
 
   return True
+
+def validate_flight_record(record, records):
+  required_fields = [
+    "ID", "Type", "Client_ID", "Airline_ID", "Date", "Departure", "Arrival"
+  ]
+
+  for field in required_fields:
+    if field not in record:
+      return False
+
+  if not validate_id(record["ID"]):
+    return False
+
+  if record["Type"] != "Flgiht":
+    return False
+
+  if not isinstance(record["Client_ID"], int):
+    return False
+
+  if not isinstance(record["Airline_ID"], int):
+    return False
+
+  if not client_exists(records, record["Client_ID"]):
+    return False
+
+  if not airline_exists(records, record["Airline_ID"]):
+    return False
+
+  if not validate_date(record["Date"]):
+    return False
+
+  if not str(record["Departure"]).strip():
+    return False
+
+  if not str(record["Arrival"]).strip():
+    return False
+
+  return True
+
+def validate_record(record, records, current_id=None):
+  if "Type" not in record:
+    return False
+
+  if not validate_record_type(record["Type"]):
+    return False
+
+  if "ID" not in record:
+    return False
+
+  if not validate_unique_id(records, record["ID"], current_id=current_id):
+    return False
+
+  if record["Type"] == "Client":
+    return validate_client_record(record)
+
+  if record["Type"] == "Airline":
+    return validate_airline_record(record)
+
+  if record["Type"] == "Flight":
+    return validate_flight_record(record, records)
+
+  return False
 
 
   
