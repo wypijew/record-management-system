@@ -63,7 +63,6 @@ title_Label.pack(pady=30)
 
 
 
-
 clients_button=tk.Button(root, 
                           text="Manage Clients", 
                           width=20)
@@ -78,7 +77,8 @@ flights_button.pack(pady=10)
 
 airlines_button=tk.Button(root,
                           text="Manage Airlines",
-                          width=20)
+                          width=20,
+                          command=open_airline_window)
 airlines_button.pack(pady=10)
 
 
