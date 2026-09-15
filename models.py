@@ -32,7 +32,7 @@ def make_client_record(record_id: int, name: str, address1: str, address2: str,
     """
     return {
         "ID": record_id,
-        "Type": "Client",  # 🔧 FIXED: corrected "type" → "Type"
+        "Type": "Client",  
         "Name": name,
         "Address Line 1": address1,
         "Address Line 2": address2,
@@ -54,7 +54,7 @@ def make_airline_record(record_id: int, airline_name: str) -> dict:
     @return: Dictionary representing the airline record
     """
     return {
-        "ID": record_id,  # 🔧 FIXED: added missing comma
+        "ID": record_id,  # 
         "Type": "Airline",
         "Airline Name": airline_name
     }
@@ -76,9 +76,9 @@ def make_flight_record(record_id: int, client_id: int, airline_id: int,
     return {
         "ID": record_id,
         "Type": "Flight",
-        "Client_ID": client_id,  # 🔧 FIXED: added missing comma
+        "Client_ID": client_id,  
         "Airline_ID": airline_id,
         "Date": date,
-        "Departure": departure_city,  # 🔧 FIXED: added missing comma
+        "Departure": departure_city,  
         "Arrival": arrival_city
     }
