@@ -83,7 +83,7 @@ def create_record(records: list, new_record: dict) -> bool:
     """
     if not validate_record(new_record, records):
         return False
-    records.append(new_record)  # 🔧 FIXED: corrected from records,append
+    records.append(new_record)  
     return True
 
 
@@ -115,14 +115,12 @@ def update_record(records: list, record_id: int, updated_data: dict, record_type
     @return: True if record was updated, False otherwise
     """
     for record in records:
-        if record.get("ID") == record_id:  # 🔧 FIXED: corrected parentheses
+        if record.get("ID") == record_id:  
             if record_type is not None and record.get("Type") != record_type:
                 continue
 
             updated_record = record.copy()
             updated_record.update(updated_data)
-
-            # 🔧 FIXED: corrected typo current_it → current_id
             if not validate_record(updated_record, records, current_id=record_id):
                 return False
 
