@@ -1,6 +1,6 @@
 from datetime import datetime
     """
-    This py file has been corrected by CoPilot with the prompt,
+    This py file has been corrected from the initial version of the code by CoPilot with the prompt,
     This is the block of code that I have written.
     Now check for any typos or indentation errors that could cause syntax citation.
     The standard for you to use when proofreading my code is provided below:
