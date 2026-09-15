@@ -1,48 +1,89 @@
-# this is how the backend pieces will connect
-# can use for initial testing before GUI is built
+"""
+Main backend entry point for record management system.
 
+This script connects the different modules (models, record manager, storage)
+and demonstrates how records can be created, updated, searched, and deleted.
+It can be used for initial testing before the GUI is built.
 
-#main.py
+This backend has been proofread for typos and discrepancies that could cause Syntax or Indentation error using Copilot.
+Prompt that I used is below
+check for typos or errors that could cause syntax error and give me a revised block of code.
+"""
 
 from models import make_client_record, make_airline_record, make_flight_record
 from record_manager import create_record, search_records, update_record, delete_record
 from storage import load_records, save_records
 
+# Constants should be uppercase with underscores
 FILENAME = "records.json"
 
 
-def main():
-  records = load_records(FILENAME)
+def main() -> None:
+    """
+    Main function to demonstrate backend functionality.
 
-  # Sample data creation
-  client = make_client_record(
-    1, "James Kim", "1 Main Street", "", "", "Newyork", "Newyork", "10977", "US" "12345678"
-  )
+    Loads records from storage, creates sample records, performs CRUD operations,
+    and saves the updated records back to storage.
+    """
+    # Load existing records from file
+    records = load_records(FILENAME)
 
-  airline = make_airline_record(2, "American Airline"
-                               )
+    # Sample data creation
+    client = make_client_record(
+        1,
+        "James Kim",
+        "1 Main Street",
+        "",
+        "",
+        "New York",
+        "New York",
+        "10977",
+        "US",
+        "12345678"
+    )
 
-  create_record(records, client)
-  create_record(records, airline)
-  create_record(records, flight)
+    airline = make_airline_record(
+        2,
+        "American Airline"
+    )
 
-  print("All records:")
-  print(records)
+    flight = make_flight_record(
+        3,
+        client_id=1,
+        airline_id=2,
+        date="26-09-16 14:30",
+        departure="New York",
+        arrival="Los Angeles"
+    )
 
-  print("\nSearch ID 1:")
-  print(search_records(records, record_id=1))
+    # Create records
+    create_record(records, client)
+    create_record(records, airline)
+    create_record(records, flight)
 
-  update_record(records, 1, {"City": "Boston"}. record_type="Client")
+    # Display all records
+    print("All records:")
+    print(records)
 
-  print("\nAfter update:")
-  print(search_records(records, record_id=1))
+    # Search for a record by ID
+    print("\nSearch ID 1:")
+    print(search_records(records, record_id=1))
 
-  delete_record(records, 3, record_type="Flight")
+    # Update a record
+    update_record(records, 1, {"City": "Boston"}, record_type="Client")
 
-  print("\nAfter deleting flight:")
-  print(records)
+    print("\nAfter update:")
+    print(search_records(records, record_id=1))
 
-  save_records(FILENAME, records)
+    # Delete a record
+    delete_record(records, 3, record_type="Flight")
+
+    print("\nAfter deleting flight:")
+    print(records)
+
+    # Save updated records back to file
+    save_records(FILENAME, records)
+
 
 if __name__ == "__main__":
-  main()
+    main()
