@@ -1,6 +1,7 @@
 # validators.py
 
 from datetime import datetime
+from re import fullmatch
 
 
 VALID_TYPES = {"Client", "Airline", "Flight"}
@@ -13,7 +14,7 @@ def validate_record_type(record_type):
     @param record_type: Record type to validate.
     @return: True if the record type is valid; otherwise False.
     """
-    return record_type in VALID_TYPES
+    return isinstance(record_type, str) and record_type in VALID_TYPES
 
 
 # 'type(record_id) is int' is used to reject boolean values,
@@ -28,13 +29,36 @@ def validate_id(record_id):
     return type(record_id) is int and record_id > 0
 
 
+def validate_required_text(value):
+    """
+    Validate that a required text field is a non-empty string.
+
+    @param value: Value to validate.
+    @return: True if the value is a non-empty string; otherwise False.
+    """
+    return isinstance(value, str) and bool(value.strip())
+
+
+def validate_optional_text(value):
+    """
+    Validate that an optional text field is a string.
+
+    @param value: Value to validate.
+    @return: True if the value is a string; otherwise False.
+    """
+    return isinstance(value, str)
+
+
 def record_id_for(record):
     """
     Return the ID field used by this record type.
 
     @param record: Record dictionary to inspect.
-    @return: Flight_ID for Flight records, otherwise ID.
+    @return: Flight_ID or ID, or None if unavailable.
     """
+    if not isinstance(record, dict):
+        return None
+
     if record_type_for(record) == "Flight":
         return record.get("Flight_ID")
     return record.get("ID")
@@ -47,18 +71,25 @@ def record_type_for(record):
     @param record: Record dictionary to inspect.
     @return: Record type string, or None if it cannot be identified.
     """
-    if record.get("Type") is None and "Flight_ID" in record:
+    if not isinstance(record, dict):
+        return None
+
+    # Infer Flight only when the Type key is absent, not invalid.
+    if "Type" not in record and "Flight_ID" in record:
         return "Flight"
-    return record.get("Type")
+
+    record_type = record.get("Type")
+    return record_type if validate_record_type(record_type) else None
 
 
 def validate_unique_id(records, record_id, current_id=None, record_type=None):
     """
-    Validate that a record ID is unique within the records list.
+    Check ID uniqueness, optionally restricted to one record type.
 
     @param records: List of existing records.
     @param record_id: Record ID to check for uniqueness.
     @param current_id: Optional ID of the record being updated.
+    @param record_type: Optional type for checking ID uniqueness.
     @return: True if the record ID is unique; otherwise False.
     """
     for record in records:
@@ -73,14 +104,21 @@ def validate_unique_id(records, record_id, current_id=None, record_type=None):
 
 def validate_date(date_string):
     """
-    Validate a date and time string against the required format.
+    Validate a real date and time in strict YY-MM-DD HH:MM format.
 
     @param date_string: Date and time string to validate.
     @return: True if the date and time are valid; otherwise False.
     """
+    if not isinstance(date_string, str):
+        return False
+
+    # Require two digits per component and exactly one separating space.
+    pattern = r"[0-9]{2}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}"
+    if fullmatch(pattern, date_string) is None:
+        return False
+
     try:
-        # Validate the agreed YY-MM-DD HH:MM format.
-        # For example, 26-09-14 14:00.
+        # Check calendar validity after checking the text format.
         datetime.strptime(date_string, "%y-%m-%d %H:%M")
         return True
     except (ValueError, TypeError):
@@ -130,6 +168,9 @@ def validate_client_record(record):
     @param record: Client record to validate.
     @return: True if the Client record is valid; otherwise False.
     """
+    if not isinstance(record, dict):
+        return False
+
     required_fields = [
         "ID",
         "Type",
@@ -154,31 +195,31 @@ def validate_client_record(record):
     if record["Type"] != "Client":
         return False
 
-    if not str(record["Name"]).strip():
+    if not validate_required_text(record["Name"]):
         return False
 
-    if not str(record["Address Line 1"]).strip():
+    if not validate_required_text(record["Address Line 1"]):
         return False
 
-    if not isinstance(record["Address Line 2"], str):
+    if not validate_optional_text(record["Address Line 2"]):
         return False
 
-    if not isinstance(record["Address Line 3"], str):
+    if not validate_optional_text(record["Address Line 3"]):
         return False
 
-    if not str(record["City"]).strip():
+    if not validate_required_text(record["City"]):
         return False
 
-    if not str(record["State"]).strip():
+    if not validate_required_text(record["State"]):
         return False
 
-    if not str(record["Zip Code"]).strip():
+    if not validate_required_text(record["Zip Code"]):
         return False
 
-    if not str(record["Country"]).strip():
+    if not validate_required_text(record["Country"]):
         return False
 
-    if not str(record["Phone Number"]).strip():
+    if not validate_required_text(record["Phone Number"]):
         return False
 
     return True
@@ -191,6 +232,9 @@ def validate_airline_record(record):
     @param record: Airline record to validate.
     @return: True if the Airline record is valid; otherwise False.
     """
+    if not isinstance(record, dict):
+        return False
+
     required_fields = ["ID", "Type", "Company Name"]
 
     for field in required_fields:
@@ -203,7 +247,7 @@ def validate_airline_record(record):
     if record["Type"] != "Airline":
         return False
 
-    if not str(record["Company Name"]).strip():
+    if not validate_required_text(record["Company Name"]):
         return False
 
     return True
@@ -217,6 +261,9 @@ def validate_flight_record(record, records):
     @param records: List used to verify referenced records.
     @return: True if the Flight record is valid; otherwise False.
     """
+    if not isinstance(record, dict):
+        return False
+
     required_fields = [
         "Flight_ID", "Client_ID", "Airline_ID", "Date",
         "Start City", "End City"
@@ -229,7 +276,7 @@ def validate_flight_record(record, records):
     if not validate_id(record["Flight_ID"]):
         return False
 
-    if record.get("Type", "Flight") != "Flight":
+    if record_type_for(record) != "Flight":
         return False
 
     # Validate both reference IDs as positive integers before checking
@@ -251,10 +298,10 @@ def validate_flight_record(record, records):
     if not validate_date(record["Date"]):
         return False
 
-    if not str(record["Start City"]).strip():
+    if not validate_required_text(record["Start City"]):
         return False
 
-    if not str(record["End City"]).strip():
+    if not validate_required_text(record["End City"]):
         return False
 
     return True
@@ -269,6 +316,9 @@ def validate_record(record, records, current_id=None):
     @param current_id: Optional ID of the record being updated.
     @return: True if the record is valid; otherwise False.
     """
+    if not isinstance(record, dict):
+        return False
+
     record_type = record_type_for(record)
     if not validate_record_type(record_type):
         return False
