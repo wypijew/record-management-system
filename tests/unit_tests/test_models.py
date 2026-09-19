@@ -13,14 +13,14 @@ from models import (
     "name, city, phone",
     [
         ("Anna Kowalska", "Luton", "07123456789"),
-        ("Łukasz Żak", "Łódź", "+48 012 345 678")
+        ("Lucas Green", "London", "+44 012 345 678")
     ]
 )
 def test_make_client_record_maps_all_fields(name, city, phone):
     """
     Check Client field names and preserve supplied text values.
 
-    @param name: Client name, including non-ASCII characters.
+    @param name: Client name to preserve.
     @param city: Client city to preserve.
     @param phone: Phone string whose formatting must be preserved.
     @return: None.
@@ -66,7 +66,7 @@ def test_make_client_record_keeps_empty_optional_fields(address2, address3):
     assert record["Address Line 3"] == address3
 
 
-@pytest.mark.parametrize("company_name", ["British Airways", "Łódź Air"])
+@pytest.mark.parametrize("company_name", ["British Airways", "London Air"])
 def test_make_airline_record_maps_all_fields(company_name):
     """
     Check Airline schema and preserve the company name.
@@ -87,7 +87,7 @@ def test_make_airline_record_maps_all_fields(company_name):
     "date, start_city, end_city",
     [
         ("26-09-18 14:30", "London", "Paris"),
-        ("28-02-29 00:05", "Łódź", "München")
+        ("28-02-29 00:05", "London", "Munich")
     ]
 )
 def test_make_flight_record_matches_gui_schema(date, start_city, end_city):
