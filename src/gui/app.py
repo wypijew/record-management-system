@@ -1,60 +1,41 @@
 import tkinter as tk
 from tkinter import messagebox
 import os
-import jsonlines
+import sys
+# Getting the main project folder so the GUI can access backend modules
+project_root = os.path.dirname(
+    os.path.dirname(
+        os.path.dirname(os.path.abspath(__file__))
+    )
+)
+
+if project_root not in sys.path:
+    sys.path.append(project_root)
+
+from record_manager import (
+    create_record,
+    search_records,
+    update_record,
+    delete_record
+)
+from storage import load_records, save_records
+from validators import validate_date
+
 root=tk.Tk()
 root.title("Travel record management system")
 root.geometry("500x400")
 
-airline_records = []
-client_records = []
-flight_records = []
-
-# Location of the JSONL records file
-base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-record_file = os.path.join(
-    base_dir,
+records_file = os.path.join(
+    project_root,
+    "src",
     "record",
-    "record.jsonl"
+    "records.json"
 )
+records = load_records(records_file)
 
-def save_records():
-    # Combine all records into one list
-    all_records = (
-        client_records
-        + airline_records
-        + flight_records
-    )
-
-    # Save every record to the JSONL file
-    with jsonlines.open(record_file, mode="w") as writer:
-        writer.write_all(all_records)
-
-def load_records():
-    # Check whether the records file exists
-    if not os.path.exists(record_file):
-        return
-
-    # Read each record from the JSONL file
-    with jsonlines.open(record_file, mode="r") as reader:
-        for record in reader:
-
-            # Client record
-            if record.get("Type") == "Client":
-                client_records.append(record)
-
-            # Airline record
-            elif record.get("Type") == "Airline":
-                airline_records.append(record)
-
-            # Flight record
-            elif record.get("Type") == "Flight":
-                flight_records.append(record)
-load_records()
 
 def close_app():
-    save_records()
+    save_records(records_file, records)
     root.destroy()
 
 def open_airline_window():
@@ -101,178 +82,164 @@ def open_airline_window():
     company_entry.pack(pady=5)
 
     def create_airline():
-        airline_id = id_entry.get()
-        company_name = company_entry.get()
+         airline_id = id_entry.get()
+         company_name = company_entry.get()
 
-    # Check that both fields have been completed
-        if airline_id == "" or company_name == "":
-         messagebox.showerror(
-            "Input Error",
-            "Please complete all fields."
-        )
-         return
+         if airline_id == "" or company_name.strip() == "":
+             messagebox.showerror(
+                  "Input Error",
+                  "Please complete all fields."
+             )
+             return
 
-    # Check that Airline ID is a number
-        if not airline_id.isdigit():
-         messagebox.showerror(
-            "Input Error",
-            "Airline ID must be a number."
-        )
-         return
+         if not airline_id.isdigit() or int(airline_id) <= 0:
+             messagebox.showerror(
+                 "Input Error",
+                 "Airline ID must be a positive number."
+            )
+             return
 
-         # Check that Airline ID is unique
-        for record in airline_records:
-             if record["ID"] == int(airline_id):
-                 messagebox.showerror(
-                     "Duplicate Airline ID",
-                     "This Airline ID already exists."
-                )
-                 return
-        
-        airline_record = {
-         "ID": int(airline_id),
-         "Type": "Airline",
-         "Company Name": company_name
-        }
-        airline_records.append(airline_record)
+         airline_record = {
+             "ID": int(airline_id),
+             "Type": "Airline",
+             "Company Name": company_name
+             }
 
-        messagebox.showinfo(
-         "Airline Created",
-         "Airline record created Successfully"
-        )
-        
-        # Clear the input boxes
-        id_entry.delete(0, tk.END)
-        company_entry.delete(0, tk.END)
+         if create_record(records, airline_record):
+             messagebox.showinfo(
+                 "Airline Created",
+                 "Airline record created successfully."
+            )
+
+             id_entry.delete(0, tk.END)
+             company_entry.delete(0, tk.END)
+
+         else:
+              messagebox.showerror(
+                 "Unable to Create",
+                 "The Airline record is invalid or the ID already exists."
+             )
 
     def search_airline():
-        airline_id = id_entry.get()
+         airline_id = id_entry.get()
 
-    # Check that an ID was entered
-        if airline_id == "":
-          messagebox.showerror(
-            "Input Error",
-            "Please enter an Airline ID."
-        )
-          return
-
-    # Check that the ID is a number
-        if not airline_id.isdigit():
-          messagebox.showerror(
-            "Input Error",
-            "Airline ID must be a number."
-        )
-          return
-
-    # Search through the airline records
-        for record in airline_records:
-          if record["ID"] == int(airline_id):
-
-            # Clear the company name box
-            company_entry.delete(0, tk.END)
-
-            # Display the company name
-            company_entry.insert(
-                0,
-                record["Company Name"]
+         if airline_id == "":
+             messagebox.showerror(
+                 "Input Error",
+                 "Please enter an Airline ID."
             )
-            return
+             return
 
-    # If no matching record was found
-        messagebox.showerror(
-        "Not Found",
-        "Airline record not found."
-    )
+         if not airline_id.isdigit() or int(airline_id) <= 0:
+             messagebox.showerror(
+                 "Input Error",
+                 "Airline ID must be a positive number."
+            )
+             return
+
+         results = search_records(
+              records,
+             record_id=int(airline_id),
+             record_type="Airline"
+         )
+
+         if results:
+             record = results[0]
+             company_entry.delete(0, tk.END)
+             company_entry.insert(
+                 0,
+                 record["Company Name"]
+                 )
+         else:
+             messagebox.showerror(
+                 "Not Found",
+                 "Airline record not found."
+            )
         
     def update_airline():
-        airline_id = id_entry.get()
-        company_name = company_entry.get()
+         airline_id = id_entry.get()
+         company_name = company_entry.get()
 
-    # Check that both fields are completed
-        if airline_id == "" or company_name == "":
-          messagebox.showerror(
-            "Input Error",
-            "Please complete all fields."
-        )
-          return
-
-    # Check that Airline ID is a number
-        if not airline_id.isdigit():
-          messagebox.showerror(
-            "Input Error",
-            "Airline ID must be a number."
-        )
-          return
-
-    # Search for the airline record
-        for record in airline_records:
-          if record["ID"] == int(airline_id):
-            # Update the company name
-            record["Company Name"] = company_name
-
-            messagebox.showinfo(
-                "Airline Updated",
-                "Airline record updated successfully."
+         if airline_id == "" or company_name.strip() == "":
+             messagebox.showerror(
+                 "Input Error",
+                 "Please complete all fields."
             )
+             return
 
-            # Clear the input boxes
-            id_entry.delete(0, tk.END)
-            company_entry.delete(0, tk.END)
+         if not airline_id.isdigit() or int(airline_id) <= 0:
+             messagebox.showerror(
+                 "Input Error",
+                 "Airline ID must be a positive number."
+             )
+             return
 
-            return
+         updated_data = {
+             "Company Name": company_name
+             }
 
-         # If the ID was not found
-          messagebox.showerror(
-           "Not Found",
-           "Airline record not found."
-    )
+         if update_record(
+              records,
+              int(airline_id),
+              updated_data,
+             record_type="Airline"
+             ):
+             messagebox.showinfo(
+                 "Airline Updated",
+                 "Airline record updated successfully."
+             )
+
+             id_entry.delete(0, tk.END)
+             company_entry.delete(0, tk.END)
+
+         else:
+             messagebox.showerror(
+                 "Unable to Update",
+                 "Airline record not found or the updated information is invalid."
+        )
     def delete_airline():
-        airline_id = id_entry.get()
+         airline_id = id_entry.get()
 
-       # Check that an ID was entered
-        if airline_id == "":
-          messagebox.showerror(
-            "Input Error",
-            "Please enter an Airline ID."
-        )
-          return
-
-        # Check that the ID is a number
-        if not airline_id.isdigit():
-          messagebox.showerror(
-            "Input Error",
-            "Airline ID must be a number."
-        )
-          return
-
-        # Search for the airline record
-        for record in airline_records:
-          if record["ID"] == int(airline_id):
-
-            # Ask for confirmation before deleting
-            confirm = messagebox.askyesno(
-                "Confirm Delete",
-                "Are you sure you want to delete this airline record?"
+         if airline_id == "":
+             messagebox.showerror(
+                 "Input Error",
+                 "Please enter an Airline ID."
             )
+             return
 
-            if confirm:
-                airline_records.remove(record)
+         if not airline_id.isdigit() or int(airline_id) <= 0:
+             messagebox.showerror(
+                 "Input Error",
+                 "Airline ID must be a positive number."
+             )
+             return
 
-                messagebox.showinfo(
-                    "Airline Deleted",
-                    "Airline record deleted successfully."
-                )
+         confirm = messagebox.askyesno(
+             "Confirm Delete",
+             "Are you sure you want to delete this Airline record?"
+             )
 
-                id_entry.delete(0, tk.END)
-                company_entry.delete(0, tk.END)
+         if not confirm:
+             return
 
-                return
+         if delete_record(
+             records,
+             int(airline_id),
+             record_type="Airline"
+             ):
+             messagebox.showinfo(
+                 "Airline Deleted",
+                 "Airline record deleted successfully."
+             )
 
-       # If the ID was not found
-        messagebox.showerror(
-         "Not Found",
-         "Airline record not found."
-        )
+             id_entry.delete(0, tk.END)
+             company_entry.delete(0, tk.END)
+
+         else:
+             messagebox.showerror(
+                 "Not Found",
+                 "Airline record not found."
+             )
     
     button_frame = tk.Frame(airline_window)
     button_frame.pack(pady=20)
@@ -473,7 +440,115 @@ def open_client_window():
     phone_entry.pack(pady=5)
 
     def create_client():
+         client_id = id_entry.get()
+         name = name_entry.get()
+         address1 = address1_entry.get()
+         address2 = address2_entry.get()
+         address3 = address3_entry.get()
+         city = city_entry.get()
+         state = state_entry.get()
+         zip_code = zip_entry.get()
+         country = country_entry.get()
+         phone = phone_entry.get()
+
+        # Check that Client ID is a positive number
+         if not client_id.isdigit() or int(client_id) <= 0:
+             messagebox.showerror(
+                 "Input Error",
+                 "Client ID must be a positive number."
+             )
+             return
+
+        # Check required fields
+         if (
+             name.strip() == ""
+             or address1.strip() == ""
+             or city.strip() == ""
+             or state.strip() == ""
+             or zip_code.strip() == ""
+             or country.strip() == ""
+             or phone.strip() == ""
+             ):
+             messagebox.showerror(
+                 "Input Error",
+                 "Please complete all required fields."
+             )
+             return
+
+         client_record = {
+             "ID": int(client_id),
+             "Type": "Client",
+             "Name": name,
+             "Address Line 1": address1,
+             "Address Line 2": address2,
+             "Address Line 3": address3,
+             "City": city,
+             "State": state,
+             "Zip Code": zip_code,
+             "Country": country,
+             "Phone Number": phone
+             }
+
+         if create_record(records, client_record):
+             messagebox.showinfo(
+                 "Client Created",
+                 "Client record created successfully."
+             )
+
+         else:
+             messagebox.showerror(
+                 "Unable to Create",
+                 "The Client record is invalid or the ID already exists."
+             )
+
+    def search_client():
         client_id = id_entry.get()
+
+        if not client_id.isdigit() or int(client_id) <= 0:
+            messagebox.showerror(
+                "Input Error",
+                "Client ID must be a positive number."
+            )
+            return
+
+        results = search_records(
+            records,
+            record_id=int(client_id),
+            record_type="Client"
+        )
+
+        if results:
+            record = results[0]
+
+            name_entry.delete(0, tk.END)
+            address1_entry.delete(0, tk.END)
+            address2_entry.delete(0, tk.END)
+            address3_entry.delete(0, tk.END)
+            city_entry.delete(0, tk.END)
+            state_entry.delete(0, tk.END)
+            zip_entry.delete(0, tk.END)
+            country_entry.delete(0, tk.END)
+            phone_entry.delete(0, tk.END)
+
+            name_entry.insert(0, record["Name"])
+            address1_entry.insert(0, record["Address Line 1"])
+            address2_entry.insert(0, record["Address Line 2"])
+            address3_entry.insert(0, record["Address Line 3"])
+            city_entry.insert(0, record["City"])
+            state_entry.insert(0, record["State"])
+            zip_entry.insert(0, record["Zip Code"])
+            country_entry.insert(0, record["Country"])
+            phone_entry.insert(0, record["Phone Number"])
+
+        else:
+            messagebox.showerror(
+                "Not Found",
+                "Client record not found."
+            )
+
+    def update_client():
+        client_id = id_entry.get()
+
         name = name_entry.get()
         address1 = address1_entry.get()
         address2 = address2_entry.get()
@@ -484,43 +559,29 @@ def open_client_window():
         country = country_entry.get()
         phone = phone_entry.get()
 
-        # Check Client ID
-        if client_id == "":
+        if not client_id.isdigit() or int(client_id) <= 0:
             messagebox.showerror(
                 "Input Error",
-                "Please enter a Client ID."
+                "Client ID must be a positive number."
             )
             return
 
-        # Check that Client ID is a number
-        if not client_id.isdigit():
+        if (
+            name.strip() == ""
+            or address1.strip() == ""
+            or city.strip() == ""
+            or state.strip() == ""
+            or zip_code.strip() == ""
+            or country.strip() == ""
+            or phone.strip() == ""
+        ):
             messagebox.showerror(
                 "Input Error",
-                "Client ID must be a number."
+                "Please complete all required fields."
             )
             return
 
-
-        # Check that Client ID is unique
-        for record in client_records:
-             if record["ID"] == int(client_id):
-                 messagebox.showerror(
-                     "Duplicate Client ID",
-                     "This Client ID already exists."
-                 )
-                 return
-        # Check that a name was entered
-        if name == "":
-            messagebox.showerror(
-                "Input Error",
-                "Please enter the client's name."
-            )
-            return
-
-        # Create the client record
-        client_record = {
-            "ID": int(client_id),
-            "Type": "Client",
+        updated_data = {
             "Name": name,
             "Address Line 1": address1,
             "Address Line 2": address2,
@@ -532,38 +593,52 @@ def open_client_window():
             "Phone Number": phone
         }
 
-        # Add the record to the list
-        client_records.append(client_record)
+        if update_record(
+            records,
+            int(client_id),
+            updated_data,
+            record_type="Client"
+        ):
+            messagebox.showinfo(
+                "Client Updated",
+                "Client record updated successfully."
+            )
 
-        messagebox.showinfo(
-            "Client Created",
-            "Client record created successfully."
-        )
+        else:
+            messagebox.showerror(
+                "Unable to Update",
+                "Client record not found or the updated information is invalid."
+            )
 
-    def search_client():
+    def delete_client():
         client_id = id_entry.get()
 
-        # Check that an ID was entered
-        if client_id == "":
-          messagebox.showerror(
-            "Input Error",
-            "Please enter a Client ID."
+        if not client_id.isdigit() or int(client_id) <= 0:
+            messagebox.showerror(
+                "Input Error",
+                "Client ID must be a positive number."
+            )
+            return
+
+        confirm = messagebox.askyesno(
+            "Confirm Delete",
+            "Are you sure you want to delete this Client record?"
         )
-          return
 
-        # Check that the ID is a number
-        if not client_id.isdigit():
-          messagebox.showerror(
-            "Input Error",
-            "Client ID must be a number."
-        )
-          return
+        if not confirm:
+            return
 
-         # Search through the client records
-        for record in client_records:
-          if record["ID"] == int(client_id):
+        if delete_record(
+            records,
+            int(client_id),
+            record_type="Client"
+        ):
+            messagebox.showinfo(
+                "Client Deleted",
+                "Client record deleted successfully."
+            )
 
-            # Clear the current fields
+            id_entry.delete(0, tk.END)
             name_entry.delete(0, tk.END)
             address1_entry.delete(0, tk.END)
             address2_entry.delete(0, tk.END)
@@ -574,133 +649,11 @@ def open_client_window():
             country_entry.delete(0, tk.END)
             phone_entry.delete(0, tk.END)
 
-            # Display the stored client information
-            name_entry.insert(0, record["Name"])
-            address1_entry.insert(0, record["Address Line 1"])
-            address2_entry.insert(0, record["Address Line 2"])
-            address3_entry.insert(0, record["Address Line 3"])
-            city_entry.insert(0, record["City"])
-            state_entry.insert(0, record["State"])
-            zip_entry.insert(0, record["Zip Code"])
-            country_entry.insert(0, record["Country"])
-            phone_entry.insert(0, record["Phone Number"])
-
-            return
-
-         # If no record was found
-        messagebox.showerror(
-         "Not Found",
-         "Client record not found."
-        )
-
-    def update_client():
-        client_id = id_entry.get()
-         # Check Client ID
-        if client_id == "":
-          messagebox.showerror(
-            "Input Error",
-            "Please enter a Client ID."
-        )
-          return
-
-        if not client_id.isdigit():
-          messagebox.showerror(
-            "Input Error",
-            "Client ID must be a number."
-        )
-          return
-
-        # Get the current values from the form
-        name = name_entry.get()
-        address1 = address1_entry.get()
-        address2 = address2_entry.get()
-        address3 = address3_entry.get()
-        city = city_entry.get()
-        state = state_entry.get()
-        zip_code = zip_entry.get()
-        country = country_entry.get()
-        phone = phone_entry.get()
-
-      # Search for the client
-        for record in client_records:
-          if record["ID"] == int(client_id):
-
-            record["Name"] = name
-            record["Address Line 1"] = address1
-            record["Address Line 2"] = address2
-            record["Address Line 3"] = address3
-            record["City"] = city
-            record["State"] = state
-            record["Zip Code"] = zip_code
-            record["Country"] = country
-            record["Phone Number"] = phone
-
-            messagebox.showinfo(
-                "Client Updated",
-                "Client record updated successfully."
+        else:
+            messagebox.showerror(
+                "Not Found",
+                "Client record not found."
             )
-
-            return
-
-        messagebox.showerror(
-          "Not Found",
-          "Client record not found."
-        )
-
-    def delete_client():
-        client_id = id_entry.get()
-
-         # Check that an ID was entered
-        if client_id == "":
-          messagebox.showerror(
-            "Input Error",
-            "Please enter a Client ID."
-          )
-          return
-
-         # Check that the ID is a number
-        if not client_id.isdigit():
-          messagebox.showerror(
-            "Input Error",
-            "Client ID must be a number."
-          )
-          return
-
-         # Search for the client record
-        for record in client_records:
-          if record["ID"] == int(client_id):
-
-            confirm = messagebox.askyesno(
-                "Confirm Delete",
-                "Are you sure you want to delete this client record?"
-            )
-
-            if confirm:
-                client_records.remove(record)
-
-                messagebox.showinfo(
-                    "Client Deleted",
-                    "Client record deleted successfully."
-                )
-
-                # Clear all fields
-                id_entry.delete(0, tk.END)
-                name_entry.delete(0, tk.END)
-                address1_entry.delete(0, tk.END)
-                address2_entry.delete(0, tk.END)
-                address3_entry.delete(0, tk.END)
-                city_entry.delete(0, tk.END)
-                state_entry.delete(0, tk.END)
-                zip_entry.delete(0, tk.END)
-                country_entry.delete(0, tk.END)
-                phone_entry.delete(0, tk.END)
-
-                return
-
-        messagebox.showerror(
-          "Not Found",
-          "Client record not found."
-        )
     # Frame for action buttons
     button_frame = tk.Frame(client_window)
     button_frame.pack(pady=20)
@@ -803,9 +756,9 @@ def open_flight_window():
 
     # Date and Time
     date_label = tk.Label(
-        flight_window,
-        text="Date / Time"
-    )
+         flight_window,
+         text="Date / Time (YY-MM-DD HH:MM)"
+     )
     date_label.pack()
 
     date_entry = tk.Entry(
@@ -848,298 +801,269 @@ def open_flight_window():
         start_city = start_city_entry.get()
         end_city = end_city_entry.get()
 
-         # Check that all fields are completed
-        if (
-            flight_id == ""
-            or client_id == ""
-            or airline_id == ""
-            or date_time == ""
-            or start_city == ""
-            or end_city == ""
-           ):
-         messagebox.showerror(
-            "Input Error",
-            "Please complete all fields."
-           )
-         return
-
-        # Check that Flight ID is a number
-        if not flight_id.isdigit():
-         messagebox.showerror(
-          "Input Error",
-          "Flight ID must be a number."
-         )
-         return
-        
-        # Check that Client ID is a number
-        if not client_id.isdigit():
-          messagebox.showerror(
-            "Input Error",
-            "Client ID must be a number."
-          )
-          return
-
-         # Check that Airline ID is a number
-        if not airline_id.isdigit():
-          messagebox.showerror(
-            "Input Error",
-            "Airline ID must be a number."
-          )
-          return
-         # Check that the Client ID exists
-        client_exists = False
-
-        for record in client_records:
-          if record["ID"] == int(client_id):
-            client_exists = True
-            break
-
-        if not client_exists:
+        # Check that IDs are positive numbers
+        if not flight_id.isdigit() or int(flight_id) <= 0:
             messagebox.showerror(
-             "Client Not Found",
-             "The Client ID does not exist."
+                "Input Error",
+                "Flight ID must be a positive number."
             )
             return
 
-
-         # Check that the Airline ID exists
-        airline_exists = False
-
-        for record in airline_records:
-          if record["ID"] == int(airline_id):
-            airline_exists = True
-            break
-
-        if not airline_exists:
+        if not client_id.isdigit() or int(client_id) <= 0:
             messagebox.showerror(
-             "Airline Not Found",
-             "The Airline ID does not exist."
+                "Input Error",
+                "Client ID must be a positive number."
             )
             return
-        # Check that Flight ID is unique
-        for record in flight_records:
-            if record["Flight_ID"] == int(flight_id):
-               messagebox.showerror(
-                 "Duplicate Flight ID",
-                 "This Flight ID already exists."
-                )
-               return
-        
-         # Create the flight record
+
+        if not airline_id.isdigit() or int(airline_id) <= 0:
+            messagebox.showerror(
+                "Input Error",
+                "Airline ID must be a positive number."
+            )
+            return
+
+        # Check required text fields
+        if start_city.strip() == "" or end_city.strip() == "":
+            messagebox.showerror(
+                "Input Error",
+                "Please complete all required fields."
+            )
+            return
+
+        # Check date and time format
+        if not validate_date(date_time):
+            messagebox.showerror(
+                "Input Error",
+                "Date and time must use the format YY-MM-DD HH:MM.\n"
+                "Example: 26-09-18 14:30"
+            )
+            return
+
+        # Check that Client exists
+        client_results = search_records(
+            records,
+            record_id=int(client_id),
+            record_type="Client"
+        )
+
+        if not client_results:
+            messagebox.showerror(
+                "Client Not Found",
+                "The Client ID does not exist."
+            )
+            return
+
+        # Check that Airline exists
+        airline_results = search_records(
+            records,
+            record_id=int(airline_id),
+            record_type="Airline"
+        )
+
+        if not airline_results:
+            messagebox.showerror(
+                "Airline Not Found",
+                "The Airline ID does not exist."
+            )
+            return
+
+        # Build the Flight record
         flight_record = {
-          "Flight_ID": int(flight_id),
-          "Type": "Flight",
-          "Client_ID": int(client_id),
-          "Airline_ID": int(airline_id),
-          "Date": date_time,
-          "Start City": start_city,
-          "End City": end_city
-         }
+            "Flight_ID": int(flight_id),
+            "Type": "Flight",
+            "Client_ID": int(client_id),
+            "Airline_ID": int(airline_id),
+            "Date": date_time,
+            "Start City": start_city,
+            "End City": end_city
+        }
 
-         # Add the record to the list
-        flight_records.append(flight_record)
+        # Ask the backend to create it
+        if create_record(records, flight_record):
+            messagebox.showinfo(
+                "Flight Created",
+                "Flight record created successfully."
+            )
 
-        messagebox.showinfo(
-          "Flight Created",
-          "Flight record created successfully."
-       )
+        else:
+            messagebox.showerror(
+                "Unable to Create",
+                "The Flight record is invalid or the Flight ID already exists."
+            )
 
 
     def search_flight():
         flight_id = flight_id_entry.get()
 
-    # Check that a Flight ID was entered
-        if flight_id == "":
+        if not flight_id.isdigit() or int(flight_id) <= 0:
             messagebox.showerror(
-             "Input Error",
-             "Please enter a Flight ID."
-             )
+                "Input Error",
+                "Flight ID must be a positive number."
+            )
             return
 
-         # Check that Flight ID is a number
-        if not flight_id.isdigit():
-             messagebox.showerror(
-             "Input Error",
-             "Flight ID must be a number."
-             )
-             return
-
-         # Search through the flight records
-        for record in flight_records:
-             if record["Flight_ID"] == int(flight_id):
-
-                 # Clear the current fields
-                 client_id_entry.delete(0, tk.END)
-                 airline_id_entry.delete(0, tk.END)
-                 date_entry.delete(0, tk.END)
-                 start_city_entry.delete(0, tk.END)
-                 end_city_entry.delete(0, tk.END)
-
-                  # Display the stored flight information
-                 client_id_entry.insert(0, record["Client_ID"])
-                 airline_id_entry.insert(0, record["Airline_ID"])
-                 date_entry.insert(0, record["Date"])
-                 start_city_entry.insert(0, record["Start City"])
-                 end_city_entry.insert(0, record["End City"])
-
-                 return
-
-         # If no matching flight was found
-        messagebox.showerror(
-             "Not Found",
-             "Flight record not found."
+        results = search_records(
+            records,
+            record_id=int(flight_id),
+            record_type="Flight"
         )
+
+        if results:
+            record = results[0]
+
+            client_id_entry.delete(0, tk.END)
+            airline_id_entry.delete(0, tk.END)
+            date_entry.delete(0, tk.END)
+            start_city_entry.delete(0, tk.END)
+            end_city_entry.delete(0, tk.END)
+
+            client_id_entry.insert(0, record["Client_ID"])
+            airline_id_entry.insert(0, record["Airline_ID"])
+            date_entry.insert(0, record["Date"])
+            start_city_entry.insert(0, record["Start City"])
+            end_city_entry.insert(0, record["End City"])
+
+        else:
+            messagebox.showerror(
+                "Not Found",
+                "Flight record not found."
+            )
 
 
     def update_flight():
-         flight_id = flight_id_entry.get()
-         client_id = client_id_entry.get()
-         airline_id = airline_id_entry.get()
-         date_time = date_entry.get()
-         start_city = start_city_entry.get()
-         end_city = end_city_entry.get()
+        flight_id = flight_id_entry.get()
+        client_id = client_id_entry.get()
+        airline_id = airline_id_entry.get()
+        date_time = date_entry.get()
+        start_city = start_city_entry.get()
+        end_city = end_city_entry.get()
 
-         # Check that all fields are completed
-         if (
-             flight_id == ""
-             or client_id == ""
-             or airline_id == ""
-             or date_time == ""
-             or start_city == ""
-             or end_city == ""
-            ):
-             messagebox.showerror(
-                 "Input Error",
-                 "Please complete all fields."
-             )
-             return
+        if not flight_id.isdigit() or int(flight_id) <= 0:
+            messagebox.showerror(
+                "Input Error",
+                "Flight ID must be a positive number."
+            )
+            return
 
-    # Check that IDs are numbers
-         if not flight_id.isdigit():
-             messagebox.showerror(
-                 "Input Error",
-                 "Flight ID must be a number."
-             )
-             return
+        if not client_id.isdigit() or int(client_id) <= 0:
+            messagebox.showerror(
+                "Input Error",
+                "Client ID must be a positive number."
+            )
+            return
 
-         if not client_id.isdigit():
-             messagebox.showerror(
-                 "Input Error",
-                 "Client ID must be a number."
-             )
-             return
+        if not airline_id.isdigit() or int(airline_id) <= 0:
+            messagebox.showerror(
+                "Input Error",
+                "Airline ID must be a positive number."
+            )
+            return
 
-         if not airline_id.isdigit():
-             messagebox.showerror(
-                 "Input Error",
-                 "Airline ID must be a number."
-             )
-             return
+        if not validate_date(date_time):
+            messagebox.showerror(
+                "Input Error",
+                "Date and time must use the format YY-MM-DD HH:MM.\n"
+                "Example: 26-09-18 14:30"
+            )
+            return
 
-         # Check that Client ID exists
-         client_exists = False
+        if start_city.strip() == "" or end_city.strip() == "":
+            messagebox.showerror(
+                "Input Error",
+                "Please complete all required fields."
+            )
+            return
 
-         for record in client_records:
-             if record["ID"] == int(client_id):
-                 client_exists = True
-                 break
+        # Check linked Client
+        if not search_records(
+            records,
+            record_id=int(client_id),
+            record_type="Client"
+        ):
+            messagebox.showerror(
+                "Client Not Found",
+                "The Client ID does not exist."
+            )
+            return
 
-         if not client_exists:
-             messagebox.showerror(
-                 "Client Not Found",
-                 "The Client ID does not exist."
-             )
-             return
+        # Check linked Airline
+        if not search_records(
+            records,
+            record_id=int(airline_id),
+            record_type="Airline"
+        ):
+            messagebox.showerror(
+                "Airline Not Found",
+                "The Airline ID does not exist."
+            )
+            return
 
-         # Check that Airline ID exists
-         airline_exists = False
+        updated_data = {
+            "Client_ID": int(client_id),
+            "Airline_ID": int(airline_id),
+            "Date": date_time,
+            "Start City": start_city,
+            "End City": end_city
+        }
 
-         for record in airline_records:
-             if record["ID"] == int(airline_id):
-                 airline_exists = True
-                 break
+        if update_record(
+            records,
+            int(flight_id),
+            updated_data,
+            record_type="Flight"
+        ):
+            messagebox.showinfo(
+                "Flight Updated",
+                "Flight record updated successfully."
+            )
 
-         if not airline_exists:
-             messagebox.showerror(
-                 "Airline Not Found",
-                 "The Airline ID does not exist."
-             ) 
-             return
-
-    # Search for the flight
-         for record in flight_records:
-             if record["Flight_ID"] == int(flight_id):
-
-                 record["Client_ID"] = int(client_id)
-                 record["Airline_ID"] = int(airline_id)
-                 record["Date"] = date_time
-                 record["Start City"] = start_city
-                 record["End City"] = end_city
-
-                 messagebox.showinfo(
-                     "Flight Updated",
-                     "Flight record updated successfully."
-                 )
-
-                 return
-
-         messagebox.showerror(
-             "Not Found",
-             "Flight record not found."
-         )
+        else:
+            messagebox.showerror(
+                "Unable to Update",
+                "Flight record not found or the updated information is invalid."
+            )
 
     def delete_flight():
-         flight_id = flight_id_entry.get()
+        flight_id = flight_id_entry.get()
 
-         # Check that a Flight ID was entered
-         if flight_id == "":
-             messagebox.showerror(
-                 "Input Error",
-                 "Please enter a Flight ID."
-             )
-             return
+        if not flight_id.isdigit() or int(flight_id) <= 0:
+            messagebox.showerror(
+                "Input Error",
+                "Flight ID must be a positive number."
+            )
+            return
 
-         # Check that Flight ID is a number
-         if not flight_id.isdigit():
-             messagebox.showerror(
-                 "Input Error",
-                 "Flight ID must be a number."
-             )
-             return
-
-         # Search for the flight record
-         for record in flight_records:
-             if record["Flight_ID"] == int(flight_id):
-
-                 # Ask for confirmation
-                 confirm = messagebox.askyesno(
-                     "Confirm Delete",
-                     "Are you sure you want to delete this flight record?"
-                     )
-
-                 if confirm:
-                     flight_records.remove(record)
-
-                     messagebox.showinfo(
-                         "Flight Deleted",
-                         "Flight record deleted successfully."
-                     )
-
-                     # Clear all fields
-                     flight_id_entry.delete(0, tk.END)
-                     client_id_entry.delete(0, tk.END)
-                     airline_id_entry.delete(0, tk.END)
-                     date_entry.delete(0, tk.END)
-                     start_city_entry.delete(0, tk.END)
-                     end_city_entry.delete(0, tk.END)
-
-                     return
-
-         # If the Flight ID was not found
-         messagebox.showerror(
-             "Not Found",
-             "Flight record not found."
+        confirm = messagebox.askyesno(
+            "Confirm Delete",
+            "Are you sure you want to delete this Flight record?"
         )
+
+        if not confirm:
+            return
+
+        if delete_record(
+            records,
+            int(flight_id),
+            record_type="Flight"
+        ):
+            messagebox.showinfo(
+                "Flight Deleted",
+                "Flight record deleted successfully."
+            )
+
+            flight_id_entry.delete(0, tk.END)
+            client_id_entry.delete(0, tk.END)
+            airline_id_entry.delete(0, tk.END)
+            date_entry.delete(0, tk.END)
+            start_city_entry.delete(0, tk.END)
+            end_city_entry.delete(0, tk.END)
+
+        else:
+            messagebox.showerror(
+                "Not Found",
+                "Flight record not found."
+            )
          
     # Frame for action buttons
     button_frame = tk.Frame(flight_window)

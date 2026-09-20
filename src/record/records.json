@@ -1,0 +1,29 @@
+[
+   {
+      "Flight_ID": 1,
+      "Type": "Flight",
+      "Client_ID": 1,
+      "Airline_ID": 1,
+      "Date": "26-09-18 14:30",
+      "Start City": "London",
+      "End City": "Cairo"
+   },
+   {
+      "ID": 1,
+      "Type": "Client",
+      "Name": "Sarah Ahmed",
+      "Address Line 1": "khkhkh",
+      "Address Line 2": "",
+      "Address Line 3": "",
+      "City": "London",
+      "State": "UK",
+      "Zip Code": "B16jdh",
+      "Country": "UK",
+      "Phone Number": "0755667788"
+   },
+   {
+      "ID": 1,
+      "Type": "Airline",
+      "Company Name": "British AIrways"
+   }
+]
