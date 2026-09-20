@@ -1,5 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
+import os
+import jsonlines
 root=tk.Tk()
 root.title("Travel record management system")
 root.geometry("500x400")
@@ -7,6 +9,53 @@ root.geometry("500x400")
 airline_records = []
 client_records = []
 flight_records = []
+
+# Location of the JSONL records file
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+record_file = os.path.join(
+    base_dir,
+    "record",
+    "record.jsonl"
+)
+
+def save_records():
+    # Combine all records into one list
+    all_records = (
+        client_records
+        + airline_records
+        + flight_records
+    )
+
+    # Save every record to the JSONL file
+    with jsonlines.open(record_file, mode="w") as writer:
+        writer.write_all(all_records)
+
+def load_records():
+    # Check whether the records file exists
+    if not os.path.exists(record_file):
+        return
+
+    # Read each record from the JSONL file
+    with jsonlines.open(record_file, mode="r") as reader:
+        for record in reader:
+
+            # Client record
+            if record.get("Type") == "Client":
+                client_records.append(record)
+
+            # Airline record
+            elif record.get("Type") == "Airline":
+                airline_records.append(record)
+
+            # Flight record
+            elif record.get("Type") == "Flight":
+                flight_records.append(record)
+load_records()
+
+def close_app():
+    save_records()
+    root.destroy()
 
 def open_airline_window():
 
@@ -71,6 +120,15 @@ def open_airline_window():
         )
          return
 
+         # Check that Airline ID is unique
+        for record in airline_records:
+             if record["ID"] == int(airline_id):
+                 messagebox.showerror(
+                     "Duplicate Airline ID",
+                     "This Airline ID already exists."
+                )
+                 return
+        
         airline_record = {
          "ID": int(airline_id),
          "Type": "Airline",
@@ -442,6 +500,15 @@ def open_client_window():
             )
             return
 
+
+        # Check that Client ID is unique
+        for record in client_records:
+             if record["ID"] == int(client_id):
+                 messagebox.showerror(
+                     "Duplicate Client ID",
+                     "This Client ID already exists."
+                 )
+                 return
         # Check that a name was entered
         if name == "":
             messagebox.showerror(
@@ -861,6 +928,7 @@ def open_flight_window():
          # Create the flight record
         flight_record = {
           "Flight_ID": int(flight_id),
+          "Type": "Flight",
           "Client_ID": int(client_id),
           "Airline_ID": int(airline_id),
           "Date": date_time,
@@ -1150,6 +1218,7 @@ airlines_button.pack(pady=10)
 exit_button=tk.Button(root,
                       text="Exit",
                       width=20,
-                      command=root.destroy)
+                      command=close_app)
 exit_button.pack(pady=10)
+root.protocol("WM_DELETE_WINDOW", close_app)
 root.mainloop()
