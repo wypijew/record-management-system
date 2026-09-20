@@ -1,2 +1,5 @@
-pytest==7.4.0
-jsonlines==4.0.0
+# Runtime dependencies
+# tkinter, json, os and sys are included with Python and do not need to be installed.
+
+# Testing
+pytest==9.1.1
