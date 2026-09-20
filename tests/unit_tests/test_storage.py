@@ -2,7 +2,7 @@
 
 import json
 
-from storage import load_records, save_records
+from src.data.storage import load_records, save_records
 
 
 def test_load_records_returns_empty_list_when_file_is_missing(tmp_path):

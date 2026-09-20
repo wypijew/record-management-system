@@ -6,6 +6,8 @@ import runpy
 
 import main
 
+import src.main as application_main
+
 
 def test_main_starts_gui(monkeypatch):
     """Check that main starts the GUI application."""
@@ -15,7 +17,7 @@ def test_main_starts_gui(monkeypatch):
         """Record that the GUI start function was called."""
         calls.append("run_app")
 
-    monkeypatch.setattr(main, "run_app", fake_run_app)
+    monkeypatch.setattr(application_main, "run_app", fake_run_app)
 
     main.main()
 
@@ -30,7 +32,7 @@ def test_running_main_file_starts_gui(monkeypatch):
         """Record that the GUI start function was called."""
         calls.append("run_app")
 
-    monkeypatch.setattr("src.gui.app.run_app", fake_run_app)
+    monkeypatch.setattr("src.main.run_app", fake_run_app)
 
     runpy.run_path(main.__file__, run_name="__main__")
 

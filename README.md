@@ -84,7 +84,7 @@ Flight dates must use the following format:
 
 Records are stored in JSON format in:
 
-`src/record/records.json`
+`src/data/records.json`
 
 When the application starts, it loads stored records into the shared list.
 When it closes normally, it saves the current shared list to the same file.
@@ -126,19 +126,27 @@ The completed manual test form is available in:
 
 `tests/manual_tests/Manual End-to-End Test Cases.docx`
 
+A PDF copy of the completed manual end-to-end test form is available in:
+
+`docs/Completed Manual End-to-End Test Cases.pdf`
+
 ## Project structure
 
 ```text
-main.py                         Application entry point
-models.py                       Record structure creation
-record_manager.py               Create, search, update and delete operations
-storage.py                      JSON loading and saving
-validators.py                   Record and field validation
-requirements.txt                Project dependencies
-src/gui/app.py                  Tkinter graphical user interface
-src/record/records.json         Persistent application data
-tests/unit_tests/               Automated unit tests
-tests/manual_tests/             Completed manual end-to-end test form
+main.py                                         Application launcher
+requirements.txt                                Project dependencies
+README.md                                       Project documentation
+docs/Completed Manual End-to-End Test Cases.pdf Completed manual test evidence
+src/main.py                                     Application entry point
+src/conf/                                       Configuration directory
+src/data/storage.py                             JSON loading and saving
+src/data/records.json                           Persistent application data
+src/gui/app.py                                  Tkinter graphical user interface
+src/record/models.py                            Record structure creation
+src/record/record_manager.py                    Create, search, update and delete operations
+src/record/validators.py                        Record and field validation
+tests/unit_tests/                               Automated unit tests
+tests/manual_tests/                             Completed manual end-to-end test form
 ```
 
 ## Repository

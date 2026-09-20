@@ -1,7 +1,11 @@
 # record_manager.py
 # creating, finding, getting, deleting, updating record
 
-from validators import record_id_for, record_type_for, validate_record
+from src.record.validators import (
+    record_id_for,
+    record_type_for,
+    validate_record,
+)
 
 
 def id_exists(records, record_id):
