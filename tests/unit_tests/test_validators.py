@@ -2,8 +2,8 @@
 
 import pytest
 
-import validators
-from validators import (
+from src.record import validators
+from src.record.validators import (
     airline_exists,
     client_exists,
     record_id_for,

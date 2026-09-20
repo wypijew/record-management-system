@@ -2,8 +2,12 @@
 
 import pytest
 
-from models import make_airline_record, make_client_record, make_flight_record
-from record_manager import (
+from src.record.models import (
+    make_airline_record,
+    make_client_record,
+    make_flight_record,
+)
+from src.record.record_manager import (
     create_record,
     delete_record,
     find_record_by_id,

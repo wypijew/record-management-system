@@ -1,25 +1,22 @@
+import os
 import tkinter as tk
 from tkinter import messagebox
-import os
-import sys
-# Getting the main project folder so the GUI can access backend modules
+
+from src.data.storage import load_records, save_records
+from src.record.record_manager import (
+    create_record,
+    delete_record,
+    search_records,
+    update_record,
+)
+from src.record.validators import validate_date
+
+
 project_root = os.path.dirname(
     os.path.dirname(
         os.path.dirname(os.path.abspath(__file__))
     )
 )
-
-if project_root not in sys.path:
-    sys.path.append(project_root)
-
-from record_manager import (
-    create_record,
-    search_records,
-    update_record,
-    delete_record
-)
-from storage import load_records, save_records
-from validators import validate_date
 
 root=tk.Tk()
 root.title("Travel record management system")
@@ -28,7 +25,7 @@ root.geometry("500x400")
 records_file = os.path.join(
     project_root,
     "src",
-    "record",
+    "data",
     "records.json"
 )
 records = load_records(records_file)

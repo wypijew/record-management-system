@@ -2,7 +2,7 @@
 
 import pytest
 
-from models import (
+from src.record.models import (
     make_airline_record,
     make_client_record,
     make_flight_record

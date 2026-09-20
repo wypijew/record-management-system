@@ -1,13 +1,6 @@
-# main.py
+"""Run the Record Management System from the project root."""
 
-"""Application entry point for the Record Management System."""
-
-from src.gui.app import run_app
-
-
-def main():
-    """Start the Record Management System GUI."""
-    run_app()
+from src.main import main
 
 
 if __name__ == "__main__":
