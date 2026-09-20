@@ -155,7 +155,7 @@ def open_airline_window():
                  "Not Found",
                  "Airline record not found."
             )
-        
+
     def update_airline():
          airline_id = id_entry.get()
          company_name = company_entry.get()
@@ -240,7 +240,7 @@ def open_airline_window():
                  "Not Found",
                  "Airline record not found."
              )
-    
+
     button_frame = tk.Frame(airline_window)
     button_frame.pack(pady=20)
 
@@ -1064,7 +1064,7 @@ def open_flight_window():
                 "Not Found",
                 "Flight record not found."
             )
-         
+
     # Frame for action buttons
     button_frame = tk.Frame(flight_window)
     button_frame.pack(pady=20)
@@ -1110,39 +1110,56 @@ def open_flight_window():
     )
     back_button.pack(pady=20)
 
-title_Label=tk.Label(root,
-                     text="Travel Record Management System",
-                    font=("Arial",18)
-)
-title_Label.pack(pady=30)
+def run_app():
+    """
+    Create and run the Record Management System GUI.
+
+    @return: None.
+    """
+    global root, records_file, records
+
+    title_label = tk.Label(
+        root,
+        text="Travel Record Management System",
+        font=("Arial", 18)
+    )
+    title_label.pack(pady=30)
+
+    clients_button = tk.Button(
+        root,
+        text="Manage Clients",
+        width=20,
+        command=open_client_window
+    )
+    clients_button.pack(pady=10)
+
+    flights_button = tk.Button(
+        root,
+        text="Manage Flights",
+        width=20,
+        command=open_flight_window
+    )
+    flights_button.pack(pady=10)
+
+    airlines_button = tk.Button(
+        root,
+        text="Manage Airlines",
+        width=20,
+        command=open_airline_window
+    )
+    airlines_button.pack(pady=10)
+
+    exit_button = tk.Button(
+        root,
+        text="Exit",
+        width=20,
+        command=close_app
+    )
+    exit_button.pack(pady=10)
+
+    root.protocol("WM_DELETE_WINDOW", close_app)
+    root.mainloop()
 
 
-
-clients_button=tk.Button(root, 
-                          text="Manage Clients", 
-                          width=20,
-                           command=open_client_window)
-clients_button.pack(pady=10)
-
-
-flights_button=tk.Button(root,
-                         text="Manage Flights",
-                         width=20,
-                         command=open_flight_window)
-flights_button.pack(pady=10)
-
-
-airlines_button=tk.Button(root,
-                          text="Manage Airlines",
-                          width=20,
-                          command=open_airline_window)
-airlines_button.pack(pady=10)
-
-
-exit_button=tk.Button(root,
-                      text="Exit",
-                      width=20,
-                      command=close_app)
-exit_button.pack(pady=10)
-root.protocol("WM_DELETE_WINDOW", close_app)
-root.mainloop()
+if __name__ == "__main__":
+    run_app()
